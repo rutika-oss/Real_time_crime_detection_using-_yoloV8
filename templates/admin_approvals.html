@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Approvals | CRIMSON</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet" />
+    <style>
+        :root {
+            --primary: #0a192f;
+            --secondary: #172a45;
+            --accent: #64ffda;
+            --text: #ccd6f6;
+            --highlight: #1e90ff;
+            --danger: #ff5555;
+            --success: #00e676;
+            --warning: #ff9100;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--primary);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: radial-gradient(circle at 75% 30%, var(--secondary) 0%, var(--primary) 50%);
+            animation: pulse 15s infinite alternate;
+        }
+
+        @keyframes pulse {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 100% 50%; }
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--secondary), var(--primary));
+            padding: 1rem 2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid rgba(100, 255, 218, 0.2);
+        }
+
+        .logo {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--accent);
+            text-shadow: 0 0 10px rgba(100, 255, 218, 0.5);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .logo i {
+            animation: spin 4s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        h2 {
+            font-family: 'Orbitron', monospace;
+            color: var(--accent);
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.8rem;
+        }
+
+        .map-container {
+            height: 500px;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+            margin-bottom: 2rem;
+            background: var(--secondary);
+            border: 1px solid rgba(100, 255, 218, 0.1);
+        }
+
+        .controls {
+            background: var(--secondary);
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            border: 1px solid rgba(100, 255, 218, 0.1);
+        }
+
+        .control-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .control-item {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--accent);
+            font-weight: 500;
+        }
+
+        select, input {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--primary);
+            border: 1px solid rgba(100, 255, 218, 0.2);
+            border-radius: 6px;
+            color: var(--text);
+            font-family: 'Roboto', sans-serif;
+        }
+
+        button {
+            background: linear-gradient(135deg, var(--highlight), #0066cc);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'Roboto', sans-serif;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(30, 144, 255, 0.4);
+        }
+
+        .info-panel {
+            background: #ff0000; /* Red background */
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-top: 1rem;
+            border: 1px solid rgba(100, 255, 218, 0.1);
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .info-item {
+            background: #cc0000; /* Darker red background for info items */
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .info-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #64ffda; /* Keep the accent color for values */
+            font-family: 'Orbitron', monospace;
+        }
+
+        .info-label {
+            font-size: 0.9rem;
+            color: #ffffff; /* White text for better visibility on red background */
+            margin-top: 0.25rem;
+        }
+
+        .status-message {
+            padding: 1rem;
+            background: var(--secondary);
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            text-align: center;
+            border: 1px solid rgba(100, 255, 218, 0.1);
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 1rem;
+            }
+            
+            .logo {
+                font-size: 1.4rem;
+            }
+            
+            .container {
+                margin: 1rem auto;
+                padding: 0 0.5rem;
+            }
+            
+            .map-container {
+                height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-animation"></div>
+    
+    <header class="header">
+        <div class="logo">
+            <i class="fas fa-shield-alt"></i>
+            CRIMSON
+        </div>
+    </header>
+
+    <div class="container">
+        <h2><i class="fas fa-map-marked-alt"></i> Real-time Crime Detection Map</h2>
+        
+        <div class="status-message" id="locationStatus">
+            <i class="fas fa-spinner fa-spin"></i> Detecting your exact location...
+        </div>
+        
+        <div class="controls">
+            <div class="control-group">
+                <div class="control-item">
+                    <label for="timeRange"><i class="fas fa-clock"></i> Time Range</label>
+                    <select id="timeRange">
+                        <option value="1h">Last Hour</option>
+                        <option value="6h">Last 6 Hours</option>
+                        <option value="24h" selected>Last 24 Hours</option>
+                        <option value="7d">Last 7 Days</option>
+                    </select>
+                </div>
+                
+                <div class="control-item">
+                    <label for="threatLevel"><i class="fas fa-exclamation-triangle"></i> Threat Level</label>
+                    <select id="threatLevel">
+                        <option value="all">All Levels</option>
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
+                        <option value="critical">Critical</option>
+                    </select>
+                </div>
+                
+                <div class="control-item">
+                    <label for="detectionType"><i class="fas fa-eye"></i> Detection Type</label>
+                    <select id="detectionType">
+                        <option value="all">All Types</option>
+                        <option value="criminal">Criminal Recognition</option>
+                        <option value="weapon">Weapon Detection</option>
+                        <option value="violence">Violence Detection</option>
+                    </select>
+                </div>
+            </div>
+            
+            <button id="refreshMap">
+                <i class="fas fa-sync-alt"></i> Refresh Map
+            </button>
+        </div>
+        
+        <div class="map-container">
+            <div id="map"></div>
+        </div>
+        
+        <div class="info-panel">
+            <h3><i class="fas fa-info-circle"></i> Current Location Information</h3>
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-value" id="latitude">--.----</div>
+                    <div class="info-label">Latitude</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-value" id="longitude">--.----</div>
+                    <div class="info-label">Longitude</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-value" id="accuracy">-- m</div>
+                    <div class="info-label">Accuracy</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-value" id="timestamp">--:--:--</div>
+                    <div class="info-label">Last Update</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Mapbox access token from Flask template
+        mapboxgl.accessToken = '{{ MAPBOX_TOKEN }}';
+        
+        // Initialize map
+        const map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/mapbox/satellite-streets-v12',
+            center: [0, 0], // Will be updated with live location
+            zoom: 1
+        });
+        
+        // Add navigation controls
+        map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+        
+        // Add geolocate control for high accuracy GPS
+        const geolocate = new mapboxgl.GeolocateControl({
+            positionOptions: {
+                enableHighAccuracy: true, // Use GPS for highest accuracy
+                timeout: 10000, // 10 second timeout
+                maximumAge: 0 // Don't use cached location
+            },
+            trackUserLocation: true,
+            showUserHeading: true,
+            showAccuracyCircle: true
+        });
+        
+        map.addControl(geolocate, 'top-left');
+        
+        // Get user's current location with high accuracy
+        function getUserLocation() {
+            if (navigator.geolocation) {
+                document.getElementById('locationStatus').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Getting precise GPS location...';
+                
+                navigator.geolocation.getCurrentPosition(
+                    position => {
+                        const { latitude, longitude, accuracy } = position.coords;
+                        
+                        // Update UI with location information
+                        document.getElementById('latitude').textContent = latitude.toFixed(6);
+                        document.getElementById('longitude').textContent = longitude.toFixed(6);
+                        document.getElementById('accuracy').textContent = `${Math.round(accuracy)} m`;
+                        document.getElementById('timestamp').textContent = new Date().toLocaleTimeString();
+                        document.getElementById('locationStatus').innerHTML = `<i class="fas fa-check-circle" style="color: #00e676;"></i> Location detected with ${Math.round(accuracy)}m accuracy`;
+                        
+                        // Center map on user's exact location
+                        map.setCenter([longitude, latitude]);
+                        map.setZoom(16); // High zoom level for precise location
+                        
+                        // Add user location marker
+                        const userMarker = new mapboxgl.Marker({ 
+                            color: '#64ffda',
+                            scale: 1.2
+                        })
+                            .setLngLat([longitude, latitude])
+                            .setPopup(new mapboxgl.Popup().setHTML(`
+                                <div style="padding: 10px;">
+                                    <h4 style="margin: 0 0 5px 0; color: #64ffda;">Live Location (GPS)</h4>
+                                    <p style="margin: 5px 0;"><strong>Coordinates:</strong> ${latitude.toFixed(6)}, ${longitude.toFixed(6)}</p>
+                                    <p style="margin: 5px 0;"><strong>Accuracy:</strong> ${Math.round(accuracy)} meters</p>
+                                    <p style="margin: 5px 0;"><strong>Time:</strong> ${new Date().toLocaleString()}</p>
+                                </div>
+                            `))
+                            .addTo(map);
+                        
+                        // Fly to user location with animation
+                        map.flyTo({
+                            center: [longitude, latitude],
+                            zoom: 16,
+                            speed: 1.2,
+                            curve: 1
+                        });
+                        
+                        // Add crime markers based on user location
+                        addCrimeMarkers(latitude, longitude);
+                    }, 
+                    error => {
+                        console.error('Error getting location:', error);
+                        // Try IP-based location as fallback
+                        getLocationByIP();
+                    },
+                    {
+                        enableHighAccuracy: true, // Use GPS for highest accuracy
+                        timeout: 10000, // 10 second timeout
+                        maximumAge: 0 // Don't use cached location
+                    }
+                );
+            } else {
+                document.getElementById('locationStatus').innerHTML = '<i class="fas fa-exclamation-triangle" style="color: #ff5555;"></i> Geolocation is not supported by your browser.';
+                console.error('Geolocation is not supported by this browser.');
+            }
+        }
+        
+        // Trigger geolocation when map loads
+        map.on('load', () => {
+            console.log('Map loaded successfully');
+            // Automatically get user's location
+            getUserLocation();
+        });
+        
+        // Refresh map button
+        document.getElementById('refreshMap').addEventListener('click', () => {
+            document.getElementById('map').innerHTML = '';
+            location.reload();
+        });
+        
+        // Add markers for crime detections (sample data) - these will use actual detection data in production
+        // For now, we'll add them after we get the user's location
+        function addCrimeMarkers(userLat, userLng) {
+            // Use provided coordinates or default to 0,0 if none provided
+            const baseLat = userLat || 0;
+            const baseLng = userLng || 0;
+            
+            const crimeMarkers = [
+                { lat: baseLat + 0.001, lng: baseLng + 0.001, type: 'criminal', threat: 'high', time: 'Just now' },
+                { lat: baseLat - 0.0005, lng: baseLng - 0.0005, type: 'weapon', threat: 'critical', time: '2 minutes ago' },
+                { lat: baseLat + 0.0008, lng: baseLng - 0.0003, type: 'violence', threat: 'medium', time: '5 minutes ago' }
+            ];
+            
+            crimeMarkers.forEach(marker => {
+                const el = document.createElement('div');
+                el.className = 'marker';
+                el.style.backgroundImage = 'url(https://placekitten.com/g/50/50)';
+                el.style.width = '30px';
+                el.style.height = '30px';
+                el.style.borderRadius = '50%';
+                el.style.border = '2px solid red';
+                el.style.cursor = 'pointer';
+                
+                new mapboxgl.Marker(el)
+                    .setLngLat([marker.lng, marker.lat])
+                    .setPopup(new mapboxgl.Popup().setHTML(`
+                        <div style="padding: 10px;">
+                            <h4 style="margin: 0 0 5px 0; color: #ff5555;">${marker.type.charAt(0).toUpperCase() + marker.type.slice(1)} Detection</h4>
+                            <p style="margin: 5px 0;"><strong>Threat Level:</strong> ${marker.threat}</p>
+                            <p style="margin: 5px 0;"><strong>Time:</strong> ${marker.time}</p>
+                            <p style="margin: 5px 0;"><strong>Location:</strong> ${marker.lat.toFixed(6)}, ${marker.lng.toFixed(6)}</p>
+                        </div>
+                    `))
+                    .addTo(map);
+            });
+        }
+        
+        // Get location based on IP address
+        function getLocationByIP() {
+            fetch('https://ipapi.co/json/')
+                .then(response => response.json())
+                .then(data => {
+                    const { latitude, longitude } = data;
+                    
+                    // Update UI with location information
+                    document.getElementById('latitude').textContent = latitude.toFixed(6);
+                    document.getElementById('longitude').textContent = longitude.toFixed(6);
+                    document.getElementById('accuracy').textContent = 'IP-based (~5km)';
+                    document.getElementById('timestamp').textContent = new Date().toLocaleTimeString();
+                    document.getElementById('locationStatus').innerHTML = `<i class="fas fa-check-circle" style="color: #00e676;"></i> Location detected via IP address`;
+                    
+                    // Center map on IP-based location
+                    map.setCenter([longitude, latitude]);
+                    map.setZoom(14); // Moderate zoom for IP-based location
+                    
+                    // Add marker for IP-based location
+                    const ipMarker = new mapboxgl.Marker({ 
+                        color: '#64ffda',
+                        scale: 1.2
+                    })
+                        .setLngLat([longitude, latitude])
+                        .setPopup(new mapboxgl.Popup().setHTML(`
+                            <div style="padding: 10px;">
+                                <h4 style="margin: 0 0 5px 0; color: #64ffda;">Live Location (IP-Based)</h4>
+                                <p style="margin: 5px 0;"><strong>Coordinates:</strong> ${latitude.toFixed(6)}, ${longitude.toFixed(6)}</p>
+                                <p style="margin: 5px 0;"><strong>Accuracy:</strong> ~5km (IP-based)</p>
+                                <p style="margin: 5px 0;"><strong>Time:</strong> ${new Date().toLocaleString()}</p>
+                            </div>
+                        `))
+                        .addTo(map);
+                    
+                    // Fly to IP-based location with animation
+                    map.flyTo({
+                        center: [longitude, latitude],
+                        zoom: 14,
+                        speed: 1.2,
+                        curve: 1
+                    });
+                    
+                    // Add crime markers based on IP location
+                    addCrimeMarkers(latitude, longitude);
+                })
+                .catch(error => {
+                    console.error('Error getting IP-based location:', error);
+                    document.getElementById('locationStatus').innerHTML = `<i class="fas fa-exclamation-triangle" style="color: #ff5555;"></i> Unable to determine location. Please check your connection.`;
+                });
+        }
+        
+        // Show live location updates
+        map.on('load', () => {
+            console.log('Map loaded successfully');
+            // Automatically get user's location first
+            getUserLocation();
+        });
+    </script>
+</body>
+</html>

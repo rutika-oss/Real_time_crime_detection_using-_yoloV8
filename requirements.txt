@@ -1,0 +1,10 @@
+Flask
+Flask-PyMongo
+Flask-Login
+Flask-WTF
+Flask-Mail
+python-dotenv
+Werkzeug
+# pygame - commented out due to Python 3.14 compatibility issues
+opencv-python
+
